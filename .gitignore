@@ -1,0 +1,5 @@
+*.eggs
+*.egg-info
+*.txt
+.idea
+data
