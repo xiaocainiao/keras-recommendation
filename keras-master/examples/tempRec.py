@@ -4,14 +4,18 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import numpy as np
-import theano
 #import random
 np.random.seed(1337) # for reproducibility
+
+import sys
+sys.path.append('../')
+
 
 from keras.datasets import reuters
 from keras.models import Sequential
 from keras.layers.recurrent import GRU,LSTM
-from keras.layers.core import Dense, Dropout, Activation,TimeDistributedDense,Cosine,Merge,Reshape,ElementMul
+from keras.layers.core import Dense, Dropout, Activation
+from keras.layers.core import TimeDistributedDense, Cosine, Merge, Reshape, ElementMul
 from keras.layers.normalization import BatchNormalization
 from keras.utils import np_utils
 from keras.preprocessing.text import Tokenizer

@@ -190,352 +190,352 @@ class Merge(object):
 
 
 class ElementMul(object): 
-	def __init__(self, layers, mode='sum',activation='linear'):
-		''' Merge the output of a list of layers or containers into a single tensor.
+    def __init__(self, layers, mode='sum',activation='linear'):
+        ''' Merge the output of a list of layers or containers into a single tensor.
             mode: {'sum', 'concat'}
         '''
-		if len(layers) < 2:
-			raise Exception("Please specify two or more input layers (or containers) to merge")
-		self.mode = mode
-		self.layers = layers
-		self.params = []
-		self.regularizers = []
-		self.constraints = []
-		self.activation = activations.get(activation)
-		for l in self.layers:
-			params, regs, consts = l.get_params()
-			self.regularizers += regs
+        if len(layers) < 2:
+            raise Exception("Please specify two or more input layers (or containers) to merge")
+        self.mode = mode
+        self.layers = layers
+        self.params = []
+        self.regularizers = []
+        self.constraints = []
+        self.activation = activations.get(activation)
+        for l in self.layers:
+            params, regs, consts = l.get_params()
+            self.regularizers += regs
             # params and constraints have the same size
-			for p, c in zip(params, consts):
-				if not p in self.params:
-					self.params.append(p)
-					self.constraints.append(c)
+            for p, c in zip(params, consts):
+                if not p in self.params:
+                    self.params.append(p)
+                    self.constraints.append(c)
 
-	def get_params(self):
-		return self.params, self.regularizers, self.constraints
-	def computeCosine(a,b):
-		return T.dot(a,b)/(T.dot(a,a)*T.dot(b,b))
-	def get_output(self, train=False):
-		print(len(self.layers))
-		u=self.layers[0].get_output(train)
-		t=self.layers[1].get_output(train)
-		#tp=t[0]
-		#tn=t[1]
-		#un=T.dot(u,u)
-		#return [T.dot(u,tp)/(un*T.dot(tp,tp)) ,T.dot(u,tn)/(un*T.dot(tn,tn))]
-		#theano.printing.pprint('vals')
-		#x=T.dvector()
-		#printed_u = hello_world_op(x)
-		#f = theano.function([x], printed_u)
-		#f(['here'])
-		
-		#T.reshape(u,[2,1])
-		#T.reshape(t,[1,2,2])
-		#d=T.dot(t.dimshuffle(1, 0, 2), u)
-		#u1=self.activation(u)
-		#t.reshape([2,2,2])
-		return (([u ,u]*t.dimshuffle(1,0,2)).dimshuffle(1,0,2))#.reshape([2,2])
-		#return d.dimshuffle(1,0,2) #just dot product
+    def get_params(self):
+        return self.params, self.regularizers, self.constraints
+    def computeCosine(a,b):
+        return T.dot(a,b)/(T.dot(a,a)*T.dot(b,b))
+    def get_output(self, train=False):
+        print(len(self.layers))
+        u=self.layers[0].get_output(train)
+        t=self.layers[1].get_output(train)
+        #tp=t[0]
+        #tn=t[1]
+        #un=T.dot(u,u)
+        #return [T.dot(u,tp)/(un*T.dot(tp,tp)) ,T.dot(u,tn)/(un*T.dot(tn,tn))]
+        #theano.printing.pprint('vals')
+        #x=T.dvector()
+        #printed_u = hello_world_op(x)
+        #f = theano.function([x], printed_u)
+        #f(['here'])
+
+        #T.reshape(u,[2,1])
+        #T.reshape(t,[1,2,2])
+        #d=T.dot(t.dimshuffle(1, 0, 2), u)
+        #u1=self.activation(u)
+        #t.reshape([2,2,2])
+        return (([u ,u]*t.dimshuffle(1,0,2)).dimshuffle(1,0,2))#.reshape([2,2])
+        #return d.dimshuffle(1,0,2) #just dot product
         
 
-	def get_input(self, train=False):
-		res = []
-		for i in range(len(self.layers)):
-			o = self.layers[i].get_input(train)
-			if not type(o) == list:
-				o = [o]
-			for output in o:
-				if output not in res:
-					res.append(output)
-		return res
+    def get_input(self, train=False):
+        res = []
+        for i in range(len(self.layers)):
+            o = self.layers[i].get_input(train)
+            if not type(o) == list:
+                o = [o]
+            for output in o:
+                if output not in res:
+                    res.append(output)
+        return res
 
-	@property
-	def input(self):
-		return self.get_input()
+    @property
+    def input(self):
+        return self.get_input()
 
-	def supports_masked_input(self):
-		return False
+    def supports_masked_input(self):
+        return False
 
-	def get_output_mask(self, train=None):
-		return None
+    def get_output_mask(self, train=None):
+        return None
 
-	def get_weights(self):
-		weights = []
-		for l in self.layers:
-			weights += l.get_weights()
-		return weights
+    def get_weights(self):
+        weights = []
+        for l in self.layers:
+            weights += l.get_weights()
+        return weights
 
-	def set_weights(self, weights):
-		for i in range(len(self.layers)):
-			nb_param = len(self.layers[i].params)
-			self.layers[i].set_weights(weights[:nb_param])
-			weights = weights[nb_param:]
+    def set_weights(self, weights):
+        for i in range(len(self.layers)):
+            nb_param = len(self.layers[i].params)
+            self.layers[i].set_weights(weights[:nb_param])
+            weights = weights[nb_param:]
 
-	def get_config(self):
-		return {"name":self.__class__.__name__,
-			"layers":[l.get_config() for l in self.layers],
+    def get_config(self):
+        return {"name":self.__class__.__name__,
+            "layers":[l.get_config() for l in self.layers],
             "mode":self.mode}
 class MaxDot(object): 
-	def __init__(self, layers, mode='sum',activation='linear'):
-		''' Merge the output of a list of layers or containers into a single tensor.
+    def __init__(self, layers, mode='sum',activation='linear'):
+        ''' Merge the output of a list of layers or containers into a single tensor.
             mode: {'sum', 'concat'}
         '''
-		if len(layers) < 2:
-			raise Exception("Please specify two or more input layers (or containers) to merge")
-		self.mode = mode
-		self.layers = layers
-		self.params = []
-		self.regularizers = []
-		self.constraints = []
-		self.activation = activations.get(activation)
-		for l in self.layers:
-			params, regs, consts = l.get_params()
-			self.regularizers += regs
+        if len(layers) < 2:
+            raise Exception("Please specify two or more input layers (or containers) to merge")
+        self.mode = mode
+        self.layers = layers
+        self.params = []
+        self.regularizers = []
+        self.constraints = []
+        self.activation = activations.get(activation)
+        for l in self.layers:
+            params, regs, consts = l.get_params()
+            self.regularizers += regs
             # params and constraints have the same size
-			for p, c in zip(params, consts):
-				if not p in self.params:
-					self.params.append(p)
-					self.constraints.append(c)
+            for p, c in zip(params, consts):
+                if not p in self.params:
+                    self.params.append(p)
+                    self.constraints.append(c)
 
-	def get_params(self):
-		return self.params, self.regularizers, self.constraints
-	def computeCosine(a,b):
-		return T.dot(a,b)/(T.dot(a,a)*T.dot(b,b))
-	def get_output(self, train=False):
-		print(len(self.layers))
-		u=self.layers[0].get_output(train)
-		t=self.layers[1].get_output(train)
-		#tp=t[0]
-		#tn=t[1]
-		#un=T.dot(u,u)
-		#return [T.dot(u,tp)/(un*T.dot(tp,tp)) ,T.dot(u,tn)/(un*T.dot(tn,tn))]
-		#theano.printing.pprint('vals')
-		#x=T.dvector()
-		#printed_u = hello_world_op(x)
-		#f = theano.function([x], printed_u)
-		#f(['here'])
-		
-		#T.reshape(u,[2,1])
-		#T.reshape(t,[1,2,2])
-		#d=T.dot(t.dimshuffle(1, 0, 2), u)
-		#u1=self.activation(u)
-		#t.reshape([2,2,2])
-		return T.max( (([u ,u]*t.dimshuffle(1,0,2)).dimshuffle(1,0,2)),2)#.reshape([2,2])
-		#return d.dimshuffle(1,0,2) #just dot product
+    def get_params(self):
+        return self.params, self.regularizers, self.constraints
+    def computeCosine(a,b):
+        return T.dot(a,b)/(T.dot(a,a)*T.dot(b,b))
+    def get_output(self, train=False):
+        print(len(self.layers))
+        u=self.layers[0].get_output(train)
+        t=self.layers[1].get_output(train)
+        #tp=t[0]
+        #tn=t[1]
+        #un=T.dot(u,u)
+        #return [T.dot(u,tp)/(un*T.dot(tp,tp)) ,T.dot(u,tn)/(un*T.dot(tn,tn))]
+        #theano.printing.pprint('vals')
+        #x=T.dvector()
+        #printed_u = hello_world_op(x)
+        #f = theano.function([x], printed_u)
+        #f(['here'])
+
+        #T.reshape(u,[2,1])
+        #T.reshape(t,[1,2,2])
+        #d=T.dot(t.dimshuffle(1, 0, 2), u)
+        #u1=self.activation(u)
+        #t.reshape([2,2,2])
+        return T.max( (([u ,u]*t.dimshuffle(1,0,2)).dimshuffle(1,0,2)),2)#.reshape([2,2])
+        #return d.dimshuffle(1,0,2) #just dot product
         
 
-	def get_input(self, train=False):
-		res = []
-		for i in range(len(self.layers)):
-			o = self.layers[i].get_input(train)
-			if not type(o) == list:
-				o = [o]
-			for output in o:
-				if output not in res:
-					res.append(output)
-		return res
+    def get_input(self, train=False):
+        res = []
+        for i in range(len(self.layers)):
+            o = self.layers[i].get_input(train)
+            if not type(o) == list:
+                o = [o]
+            for output in o:
+                if output not in res:
+                    res.append(output)
+        return res
 
-	@property
-	def input(self):
-		return self.get_input()
+    @property
+    def input(self):
+        return self.get_input()
 
-	def supports_masked_input(self):
-		return False
+    def supports_masked_input(self):
+        return False
 
-	def get_output_mask(self, train=None):
-		return None
+    def get_output_mask(self, train=None):
+        return None
 
-	def get_weights(self):
-		weights = []
-		for l in self.layers:
-			weights += l.get_weights()
-		return weights
+    def get_weights(self):
+        weights = []
+        for l in self.layers:
+            weights += l.get_weights()
+        return weights
 
-	def set_weights(self, weights):
-		for i in range(len(self.layers)):
-			nb_param = len(self.layers[i].params)
-			self.layers[i].set_weights(weights[:nb_param])
-			weights = weights[nb_param:]
+    def set_weights(self, weights):
+        for i in range(len(self.layers)):
+            nb_param = len(self.layers[i].params)
+            self.layers[i].set_weights(weights[:nb_param])
+            weights = weights[nb_param:]
 
-	def get_config(self):
-		return {"name":self.__class__.__name__,
-			"layers":[l.get_config() for l in self.layers],
+    def get_config(self):
+        return {"name":self.__class__.__name__,
+            "layers":[l.get_config() for l in self.layers],
             "mode":self.mode}
 
 
 class Cosine5(object): 
-	def __init__(self, layers, mode='sum',activation='linear'):
-		''' Merge the output of a list of layers or containers into a single tensor.
+    def __init__(self, layers, mode='sum',activation='linear'):
+        ''' Merge the output of a list of layers or containers into a single tensor.
             mode: {'sum', 'concat'}
         '''
-		if len(layers) < 2:
-			raise Exception("Please specify two or more input layers (or containers) to merge")
-		self.mode = mode
-		self.layers = layers
-		self.params = []
-		self.regularizers = []
-		self.constraints = []
-		self.activation = activations.get(activation)
-		for l in self.layers:
-			params, regs, consts = l.get_params()
-			self.regularizers += regs
+        if len(layers) < 2:
+            raise Exception("Please specify two or more input layers (or containers) to merge")
+        self.mode = mode
+        self.layers = layers
+        self.params = []
+        self.regularizers = []
+        self.constraints = []
+        self.activation = activations.get(activation)
+        for l in self.layers:
+            params, regs, consts = l.get_params()
+            self.regularizers += regs
             # params and constraints have the same size
-			for p, c in zip(params, consts):
-				if not p in self.params:
-					self.params.append(p)
-					self.constraints.append(c)
+            for p, c in zip(params, consts):
+                if not p in self.params:
+                    self.params.append(p)
+                    self.constraints.append(c)
 
-	def get_params(self):
-		return self.params, self.regularizers, self.constraints
-	def computeCosine(a,b):
-		return T.dot(a,b)/(T.dot(a,a)*T.dot(b,b))
-	def get_output(self, train=False):
-		print(len(self.layers))
-		u=self.layers[0].get_output(train)
-		t=self.layers[1].get_output(train)
-		#tp=t[0]
-		#tn=t[1]
-		#un=T.dot(u,u)
-		#return [T.dot(u,tp)/(un*T.dot(tp,tp)) ,T.dot(u,tn)/(un*T.dot(tn,tn))]
-		#theano.printing.pprint('vals')
-		#x=T.dvector()
-		#printed_u = hello_world_op(x)
-		#f = theano.function([x], printed_u)
-		#f(['here'])
-		
-		#T.reshape(u,[2,1])
-		#T.reshape(t,[1,2,2])
-		#d=T.dot(t.dimshuffle(1, 0, 2), u)
-		#u1=self.activation(u)
-		#t.reshape([2,2,2])
-		return T.sum( (([u ,u,u,u,u]*t.dimshuffle(1,0,2)).dimshuffle(1,0,2)),2)#.reshape([2,2])
-		#return d.dimshuffle(1,0,2) #just dot product
+    def get_params(self):
+        return self.params, self.regularizers, self.constraints
+    def computeCosine(a,b):
+        return T.dot(a,b)/(T.dot(a,a)*T.dot(b,b))
+    def get_output(self, train=False):
+        print(len(self.layers))
+        u=self.layers[0].get_output(train)
+        t=self.layers[1].get_output(train)
+        #tp=t[0]
+        #tn=t[1]
+        #un=T.dot(u,u)
+        #return [T.dot(u,tp)/(un*T.dot(tp,tp)) ,T.dot(u,tn)/(un*T.dot(tn,tn))]
+        #theano.printing.pprint('vals')
+        #x=T.dvector()
+        #printed_u = hello_world_op(x)
+        #f = theano.function([x], printed_u)
+        #f(['here'])
+
+        #T.reshape(u,[2,1])
+        #T.reshape(t,[1,2,2])
+        #d=T.dot(t.dimshuffle(1, 0, 2), u)
+        #u1=self.activation(u)
+        #t.reshape([2,2,2])
+        return T.sum( (([u ,u,u,u,u]*t.dimshuffle(1,0,2)).dimshuffle(1,0,2)),2)#.reshape([2,2])
+        #return d.dimshuffle(1,0,2) #just dot product
         
 
-	def get_input(self, train=False):
-		res = []
-		for i in range(len(self.layers)):
-			o = self.layers[i].get_input(train)
-			if not type(o) == list:
-				o = [o]
-			for output in o:
-				if output not in res:
-					res.append(output)
-		return res
+    def get_input(self, train=False):
+        res = []
+        for i in range(len(self.layers)):
+            o = self.layers[i].get_input(train)
+            if not type(o) == list:
+                o = [o]
+            for output in o:
+                if output not in res:
+                    res.append(output)
+        return res
 
-	@property
-	def input(self):
-		return self.get_input()
+    @property
+    def input(self):
+        return self.get_input()
 
-	def supports_masked_input(self):
-		return False
+    def supports_masked_input(self):
+        return False
 
-	def get_output_mask(self, train=None):
-		return None
+    def get_output_mask(self, train=None):
+        return None
 
-	def get_weights(self):
-		weights = []
-		for l in self.layers:
-			weights += l.get_weights()
-		return weights
+    def get_weights(self):
+        weights = []
+        for l in self.layers:
+            weights += l.get_weights()
+        return weights
 
-	def set_weights(self, weights):
-		for i in range(len(self.layers)):
-			nb_param = len(self.layers[i].params)
-			self.layers[i].set_weights(weights[:nb_param])
-			weights = weights[nb_param:]
+    def set_weights(self, weights):
+        for i in range(len(self.layers)):
+            nb_param = len(self.layers[i].params)
+            self.layers[i].set_weights(weights[:nb_param])
+            weights = weights[nb_param:]
 
-	def get_config(self):
-		return {"name":self.__class__.__name__,
-			"layers":[l.get_config() for l in self.layers],
+    def get_config(self):
+        return {"name":self.__class__.__name__,
+            "layers":[l.get_config() for l in self.layers],
             "mode":self.mode}
 
 
 class Cosine(object): 
-	def __init__(self, layers, mode='sum',activation='linear'):
-		''' Merge the output of a list of layers or containers into a single tensor.
+    def __init__(self, layers, mode='sum',activation='linear'):
+        ''' Merge the output of a list of layers or containers into a single tensor.
             mode: {'sum', 'concat'}
         '''
-		if len(layers) < 2:
-			raise Exception("Please specify two or more input layers (or containers) to merge")
-		self.mode = mode
-		self.layers = layers
-		self.params = []
-		self.regularizers = []
-		self.constraints = []
-		self.activation = activations.get(activation)
-		for l in self.layers:
-			params, regs, consts = l.get_params()
-			self.regularizers += regs
+        if len(layers) < 2:
+            raise Exception("Please specify two or more input layers (or containers) to merge")
+        self.mode = mode
+        self.layers = layers
+        self.params = []
+        self.regularizers = []
+        self.constraints = []
+        self.activation = activations.get(activation)
+        for l in self.layers:
+            params, regs, consts = l.get_params()
+            self.regularizers += regs
             # params and constraints have the same size
-			for p, c in zip(params, consts):
-				if not p in self.params:
-					self.params.append(p)
-					self.constraints.append(c)
+            for p, c in zip(params, consts):
+                if not p in self.params:
+                    self.params.append(p)
+                    self.constraints.append(c)
 
-	def get_params(self):
-		return self.params, self.regularizers, self.constraints
-	def computeCosine(a,b):
-		return T.dot(a,b)/(T.dot(a,a)*T.dot(b,b))
-	def get_output(self, train=False):
-		print(len(self.layers))
-		u=self.layers[0].get_output(train)
-		t=self.layers[1].get_output(train)
-		#tp=t[0]
-		#tn=t[1]
-		#un=T.dot(u,u)
-		#return [T.dot(u,tp)/(un*T.dot(tp,tp)) ,T.dot(u,tn)/(un*T.dot(tn,tn))]
-		#theano.printing.pprint('vals')
-		#x=T.dvector()
-		#printed_u = hello_world_op(x)
-		#f = theano.function([x], printed_u)
-		#f(['here'])
-		
-		#T.reshape(u,[2,1])
-		#T.reshape(t,[1,2,2])
-		#d=T.dot(t.dimshuffle(1, 0, 2), u)
-		#u1=self.activation(u)
-		#t.reshape([2,2,2])
-		return T.sum( (([u ,u]*t.dimshuffle(1,0,2)).dimshuffle(1,0,2)),2)#.reshape([2,2])
-		#return d.dimshuffle(1,0,2) #just dot product
+    def get_params(self):
+        return self.params, self.regularizers, self.constraints
+    def computeCosine(a,b):
+        return T.dot(a,b)/(T.dot(a,a)*T.dot(b,b))
+    def get_output(self, train=False):
+        print(len(self.layers))
+        u=self.layers[0].get_output(train)
+        t=self.layers[1].get_output(train)
+        #tp=t[0]
+        #tn=t[1]
+        #un=T.dot(u,u)
+        #return [T.dot(u,tp)/(un*T.dot(tp,tp)) ,T.dot(u,tn)/(un*T.dot(tn,tn))]
+        #theano.printing.pprint('vals')
+        #x=T.dvector()
+        #printed_u = hello_world_op(x)
+        #f = theano.function([x], printed_u)
+        #f(['here'])
+
+        #T.reshape(u,[2,1])
+        #T.reshape(t,[1,2,2])
+        #d=T.dot(t.dimshuffle(1, 0, 2), u)
+        #u1=self.activation(u)
+        #t.reshape([2,2,2])
+        return T.sum( (([u ,u]*t.dimshuffle(1,0,2)).dimshuffle(1,0,2)),2)#.reshape([2,2])
+        #return d.dimshuffle(1,0,2) #just dot product
         
 
-	def get_input(self, train=False):
-		res = []
-		for i in range(len(self.layers)):
-			o = self.layers[i].get_input(train)
-			if not type(o) == list:
-				o = [o]
-			for output in o:
-				if output not in res:
-					res.append(output)
-		return res
+    def get_input(self, train=False):
+        res = []
+        for i in range(len(self.layers)):
+            o = self.layers[i].get_input(train)
+            if not type(o) == list:
+                o = [o]
+            for output in o:
+                if output not in res:
+                    res.append(output)
+        return res
 
-	@property
-	def input(self):
-		return self.get_input()
+    @property
+    def input(self):
+        return self.get_input()
 
-	def supports_masked_input(self):
-		return False
+    def supports_masked_input(self):
+        return False
 
-	def get_output_mask(self, train=None):
-		return None
+    def get_output_mask(self, train=None):
+        return None
 
-	def get_weights(self):
-		weights = []
-		for l in self.layers:
-			weights += l.get_weights()
-		return weights
+    def get_weights(self):
+        weights = []
+        for l in self.layers:
+            weights += l.get_weights()
+        return weights
 
-	def set_weights(self, weights):
-		for i in range(len(self.layers)):
-			nb_param = len(self.layers[i].params)
-			self.layers[i].set_weights(weights[:nb_param])
-			weights = weights[nb_param:]
+    def set_weights(self, weights):
+        for i in range(len(self.layers)):
+            nb_param = len(self.layers[i].params)
+            self.layers[i].set_weights(weights[:nb_param])
+            weights = weights[nb_param:]
 
-	def get_config(self):
-		return {"name":self.__class__.__name__,
-			"layers":[l.get_config() for l in self.layers],
+    def get_config(self):
+        return {"name":self.__class__.__name__,
+            "layers":[l.get_config() for l in self.layers],
             "mode":self.mode}
 
 
@@ -549,14 +549,14 @@ class MaxTopic(MaskedLayer):
 
     '''
     def __init__(self):
-		super(MaxTopic, self).__init__()
-		#self.init = initializations.get(init)
-		self.input = T.tensor3()
+        super(MaxTopic, self).__init__()
+        #self.init = initializations.get(init)
+        self.input = T.tensor3()
         
     def get_output(self, train=False):
-		X = self.get_input(train)
-		output = (T.max(X,axis=2,keepdims=False) )
-		return output
+        X = self.get_input(train)
+        output = (T.max(X,axis=2,keepdims=False) )
+        return output
 
 class Dropout(MaskedLayer):
     '''
